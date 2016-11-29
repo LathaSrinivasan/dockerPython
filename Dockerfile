@@ -1,25 +1,31 @@
-FROM alpine
+FROM ubuntu:14.04
 
-#Set up basic flask environment
-RUN apk add --no-cache bash uwsgi uwsgi-python py-pip \
-	&& pip install --upgrade pip 
+#update OS
+RUN sed -i 's/# \(.multiverse$\)/\1/g' /etc/apt/sources.list
+RUN apt-get update
+RUN apt-get -y upgrade
 
-# application folder
-ENV APP_DIR /webapp
+#Install python
+RUN apt-get install -y python-dev python-pip
 
+RUN mkdir /webapp
 ADD . /webapp
-
 #Add requirements.txt
 ADD requirements.txt /webapp
 
-WORKDIR /webapp
+#Install uwsgi python web server
+RUN pip install uwsgi
+
+
 #Install app requirements
-RUN pip install -r requirements.txt
+RUN pip install flask itsdangerous Jinja2 MarkupSafe Werkzeug
 
 ENV HOME /webapp
+WORKDIR /webapp
+
 
 EXPOSE  8000
 
 
 #execute app
-ENTRYPOINT ["uwsgi", "--http", "0.0.0.0:8000", "--module", "app:simpleapp", "--processes", "1", "--threads", "8"]
+ENTRYPOINT ["uwsgi", "--http", "0.0.0.0:8000", "--module", "app:app", "--processes", "1", "--threads", "8"]
